@@ -35,6 +35,8 @@ namespace laboratorium6
             szopy = szop;
             StartTimer();
             InitGrid();
+            gameTimer.Interval = 1000; // 1 sekunda, zamiast 100 000
+
         }
 
         private void InitGrid()
@@ -79,7 +81,7 @@ namespace laboratorium6
             }
         }
 
-        private void CellClick(object sender, DataGridViewCellEventArgs e)
+        private async void CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex < 0)
                 return;
@@ -90,7 +92,7 @@ namespace laboratorium6
 
             if (content == "Dydelf")
             {
-                cell.Value = "dydelo"; 
+                cell.Value = "dydelo";
                 cell.Tag = "clicked";
                 dydelfsLeft--;
                 if (dydelfsLeft == 0)
@@ -102,19 +104,30 @@ namespace laboratorium6
             }
             else if (content == "Krokodyl")
             {
-                cell.Value = "crocodillobombardilo"; 
-                cell.Tag = "clicked";
-                lastClickedCell = cell;
-                krokodylStopwatch.Restart(); 
-                MessageBox.Show("Kliknij w ikonke jeszcze raz masz dwie sekundy!");
-
-                gameTimer.Stop();
+                if (lastClickedCell == cell && krokodylStopwatch.ElapsedMilliseconds <= 2000)
+                {
+                    MessageBox.Show("Udało się uniknąć ataku krokodyla!");
+                    krokodylStopwatch.Stop();
+                    gameTimer.Start();
+                }
+                else
+                {
+                    cell.Value = "crocodillobombardilo";
+                    cell.Tag = "clicked";
+                    lastClickedCell = cell;
+                    krokodylStopwatch.Restart();
+                    gameTimer.Stop();
+                    MessageBox.Show("Kliknij ponownie w ciągu 2 sekund!");
+                }
             }
+
             else if (content == "Szop")
             {
-                cell.Value = "szops"; 
+                cell.Value = "szops";
                 cell.Tag = "clicked";
-                MessageBox.Show("Szop blokuje sasiadow.");
+                MessageBox.Show("Szop pojawił się i za chwilę zablokuje sąsiadów.");
+                await Task.Delay(2000); // Czeka 2 sekundy
+
                 for (int dx = -1; dx <= 1; dx++)
                 {
                     for (int dy = -1; dy <= 1; dy++)
@@ -129,10 +142,12 @@ namespace laboratorium6
                         }
                     }
                 }
+               
             }
+
             else
             {
-                cell.Value = ""; 
+                cell.Value = "";
                 cell.Tag = "clicked";
             }
         }
@@ -141,7 +156,7 @@ namespace laboratorium6
         {
             timeLeft = totalTime;
             gameTimer = new System.Windows.Forms.Timer(); 
-            gameTimer.Interval = 1000; 
+            gameTimer.Interval = 100000; 
             gameTimer.Tick += (s, e) =>
             {
                 timeLeft--;
